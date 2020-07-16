@@ -209,6 +209,8 @@
 (setq org-archive-location (concat org-directory ".archive-%s::"))
 (setq org-agenda-skip-scheduled-if-done t)
 
+(setq org-list-allow-alphabetical t)
+
 (add-hook 'org-mode-hook #'auto-fill-mode)
 
 (use-package org-fancy-priorities
