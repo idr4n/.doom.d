@@ -24,6 +24,8 @@
 (package! company-org-roam
   :recipe (:host github :repo "org-roam/company-org-roam"))
 (package! org-roam-server)
+(unpin! org-roam)
+(unpin! company-org-roam)
 
 ;; If you'd like to disable a package included with Doom, you can do so here
 ;; with the `:disable' property:
