@@ -56,6 +56,12 @@
   (interactive "<R><y>")
   (evil-change-line beg end type ?_ yank-handler))
 
+(evil-define-operator evil-delete-char-without-register (beg end type register)
+  "Delete next character."
+  :motion evil-forward-char
+  (interactive "<R><x>")
+  (evil-delete beg end type ?_ register))
+
 (map! :n "d" 'evil-delete-without-register)
 (map! :v "d" 'evil-delete-without-register)
 (map! :n "D" 'evil-delete-line-without-register)
@@ -65,6 +71,7 @@
 (map! :n "m" 'evil-delete)
 (map! :v "m" 'evil-delete)
 (map! :n "M" 'evil-delete-line)
+(map! :n "x" 'evil-delete-char-without-register)
 (map! :mode evil-snipe-mode :n "S" nil)
 (map! :n "S" 'evil-change)
 
@@ -79,9 +86,21 @@
           ((org-at-heading-p)
            (org-fix-tags-on-the-fly)))))
 
+(evil-define-operator evil-org-delete-char-without-register (count beg end type register)
+  "Combine evil-delete-char with org-delete-char"
+  :motion evil-forward-char
+  (interactive "p<R><x>")
+  (if (evil-visual-state-p)             ; No special support for visual state
+      (evil-delete-char-without-register beg end type register)
+    (evil-set-register ?- (filter-buffer-substring beg end))
+    (evil-yank beg end type ?_ register)
+    (org-delete-char count)))
+
 (defun org_mode_delete()
   (map! :map evil-org-mode-map :n "d" 'evil-org-delete-without-register)
-  (map! :map evil-org-mode-map :v "d" 'evil-org-delete-without-register))
+  (map! :map evil-org-mode-map :v "d" 'evil-org-delete-without-register)
+  (map! :map evil-org-mode-map :n "x" 'evil-org-delete-char-without-register)
+  (map! :map evil-org-mode-map :v "x" 'evil-org-delete-char-without-register))
 
 (add-hook! 'evil-org-mode-hook 'org_mode_delete)
 
