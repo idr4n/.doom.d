@@ -101,14 +101,38 @@ Save in REGISTER or in the kill-ring with YANK-HANDLER."
   (interactive "<R><y>")
   (evil-delete-line beg end type ?_ yank-handler))
 
-(evil-define-operator evil-change-without-register (beg end type yank-handler)
-  (interactive "<R><y>")
-  (evil-change beg end type ?_ yank-handler))
+(evil-define-operator evil-change
+  (beg end type register yank-handler delete-func)
+  "Change text from BEG to END with TYPE.
+Save in REGISTER or the kill-ring with YANK-HANDLER.
+DELETE-FUNC is a function for deleting text, default `evil-delete'.
+If TYPE is `line', insertion starts on an empty line.
+If TYPE is `block', the inserted text in inserted at each line
+of the block."
+  (interactive "<R><x><y>")
+  (let ((delete-func (or delete-func #'evil-delete))
+        (nlines (1+ (evil-count-lines beg end)))
+        (opoint (save-excursion
+                  (goto-char beg)
+                  (line-beginning-position))))
+    (unless (eq evil-want-fine-undo t)
+      (evil-start-undo-step))
+    (funcall delete-func beg end type ?_ yank-handler)
+    (cond
+     ((eq type 'line)
+      (if ( = opoint (point))
+          (evil-open-above 1)
+        (evil-open-below 1)))
+     ((eq type 'block)
+      (evil-insert 1 nlines))
+     (t
+      (evil-insert 1)))))
 
-(evil-define-operator evil-change-line-without-register (beg end type yank-handler)
+(evil-define-operator evil-change-line (beg end type register yank-handler)
+  "Change to end of line."
   :motion evil-end-of-line-or-visual-line
-  (interactive "<R><y>")
-  (evil-change-line beg end type ?_ yank-handler))
+  (interactive "<R><x><y>")
+  (evil-change beg end type ?_ yank-handler #'evil-delete-line))
 
 (evil-define-operator evil-delete-char-without-register (beg end type register)
   "Delete next character."
@@ -116,29 +140,13 @@ Save in REGISTER or in the kill-ring with YANK-HANDLER."
   (interactive "<R><x>")
   (evil-delete beg end type ?_ register))
 
-;; (map! :n "d" 'evil-delete-without-register)
-;; (map! :v "d" 'evil-delete-without-register)
 (map! :n "D" 'evil-delete-line-without-register)
-(map! :n "c" 'evil-change-without-register)
-(map! :v "c" 'evil-change-without-register)
-(map! :n "C" 'evil-change-line-without-register)
 (map! :n "m" 'evil-delete-with-register)
 (map! :v "m" 'evil-delete-with-register)
 (map! :n "M" 'evil-delete-line)
 (map! :n "x" 'evil-delete-char-without-register)
 (map! :mode evil-snipe-mode :n "S" nil)
 (map! :n "S" 'evil-change)
-
-(evil-define-operator evil-org-delete-without-register (beg end type register yank-handler)
-  "Like evil-delete, but realigns tags and numbered lists."
-  (interactive "<R><y>")
-  (let ((renumber-lists-p (or (< beg (line-beginning-position))
-                              (> end (line-end-position)))))
-    (evil-delete beg end type ?_ yank-handler)
-    (cond ((and renumber-lists-p (org-at-item-p))
-           (org-list-repair))
-          ((org-at-heading-p)
-           (org-fix-tags-on-the-fly)))))
 
 (evil-define-operator evil-org-delete-char-without-register (count beg end type register)
   "Combine evil-delete-char with org-delete-char"
@@ -151,8 +159,6 @@ Save in REGISTER or in the kill-ring with YANK-HANDLER."
     (org-delete-char count)))
 
 (defun org_mode_delete()
-  ;; (map! :map evil-org-mode-map :n "d" 'evil-org-delete-without-register)
-  ;; (map! :map evil-org-mode-map :v "d" 'evil-org-delete-without-register)
   (map! :map evil-org-mode-map :n "x" 'evil-org-delete-char-without-register)
   (map! :map evil-org-mode-map :v "x" 'evil-org-delete-char-without-register))
 
