@@ -114,8 +114,8 @@
         centaur-tabs-set-bar 'over)
   ;; (centaur-tabs-headline-match)
   (centaur-tabs-mode)
-  ;; (defun centaur-tabs-buffer-groups ()
-  ;;   (list "GROUP"))
+  (defun centaur-tabs-buffer-groups ()
+    (list "GROUP"))
   (defun centaur-tabs-hide-tab (x)
     "Disable tabs for certain buffer types"
     (let ((name (format "%s" x)))
@@ -130,10 +130,11 @@
        (string-prefix-p "*Compile-Log*" name)
        (string-prefix-p "*tide-server" name)
        (string-prefix-p "*lsp" name)
+       (string-match-p (concat "[0-9]\\{14\\}" ".*-.*\\.org") name)
        (and (string-prefix-p "magit" name)
             (not (file-name-extension name))))))
   :hook
-  (org-mode . centaur-tabs-local-mode)
+  ;; (org-mode . centaur-tabs-local-mode)
   (dired-mode . centaur-tabs-local-mode)
 )
 
